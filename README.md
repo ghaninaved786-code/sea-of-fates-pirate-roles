@@ -6,8 +6,6 @@ It is a single HTML file with no dependencies, no build step and no install.
 
 ## How to run
 
-1. Download `sea-of-fates-pirate-roles.html`.
-2. Open it in any modern browser (desktop or phone).
 3. https://ghaninaved786-code.github.io/Sea-of-fates-pirate-roles/
 
 To host it on GitHub Pages, rename the file to `index.html` and enable Pages for the repository.
