@@ -1,0 +1,188 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Sea of Fates – Pirate Roles</title>
+<style>
+:root{--bg:#f6f1e7;--fg:#1d2a33;--mut:#5d6b75;--card:#fff;--ac:#0e6e8c;--ac2:#c8553d;--bd:#d8cfbd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d1b24;--fg:#eef2f4;--mut:#9fb0bb;--card:#16293a;--ac:#4cc3e0;--ac2:#ff8a65;--bd:#2c4357;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0d1b24;--fg:#eef2f4;--mut:#9fb0bb;--card:#16293a;--ac:#4cc3e0;--ac2:#ff8a65;--bd:#2c4357;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif}
+main{max-width:480px;margin:0 auto;padding:16px}
+h1,h2,h3{font-family:Georgia,serif;margin:8px 0}
+input{font:inherit;width:100%;box-sizing:border-box;padding:12px;margin:6px 0;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--fg)}
+button{font:inherit;padding:12px 16px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--fg);cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.5}.primary{background:var(--ac);color:#fff;border-color:var(--ac)}
+.sub,.sm{color:var(--mut);font-size:14px;margin:6px 0}#err{color:var(--ac2)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.chips button{padding:6px 10px;font-size:14px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#stage{min-height:300px;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;text-align:center;margin:10px 0;overflow:hidden}
+#ctl{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}#ab{width:100%;margin-top:10px}
+.o{flex:1 1 40%}.hi{outline:3px solid var(--ac2);background:#ffe9a8;color:#111}
+.bar2{position:relative;height:36px;background:var(--bg);border:1px solid var(--bd);border-radius:10px;margin:18px 0}
+#zn,#ze{position:absolute;top:0;bottom:0;background:#30a46c99;border-radius:8px}
+#mk{position:absolute;top:-4px;width:6px;height:44px;background:var(--ac2);border-radius:3px;transform:translateX(-50%)}
+#sp{position:absolute;top:2px;transform:translateX(-50%);font-size:26px}
+.tb{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:10px}.tb i{display:block;height:100%;width:100%;background:var(--ac2)}
+.map{position:relative;height:190px;background:var(--bg);border-radius:12px;margin:8px 0;border:1px dashed var(--bd)}
+.map .ing{position:absolute;transform:translate(-50%,-50%)}
+.ing{display:inline-block;font-size:26px;cursor:pointer;padding:4px 8px;border-radius:10px;border:2px solid transparent}.sel{border-color:var(--ac2)}
+.loc{position:absolute;transform:translate(-50%,-50%);font-size:12px;padding:3px 7px;border-radius:8px;background:var(--card);border:1px solid var(--bd)}.loc.sel{background:#ffe9a8;color:#111}
+.kit{position:absolute;right:6px;bottom:6px;font-size:12px}
+.prog{height:12px;background:var(--bg);border-radius:6px;overflow:hidden;margin:8px 0}.prog i{display:block;height:100%;width:0;background:var(--ac)}
+.run{animation:ld 1.2s linear forwards}@keyframes ld{to{width:100%}}
+#pop{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;font-size:14px}
+#js{width:100px;height:100px;border-radius:50%;background:var(--bg);border:2px solid var(--bd);position:relative;touch-action:none}
+#js i{position:absolute;left:35px;top:35px;width:30px;height:30px;border-radius:50%;background:var(--ac)}
+canvas{max-width:100%;touch-action:none;border-radius:8px}.ov ol{text-align:left}
+</style></head><body><main>
+<section id="home"><h1>⚓ Sea of Fates</h1><p class="sub">Prototype 2 · Pirate Roles</p>
+<input id="un" placeholder="Username" maxlength="16"><input id="rl" placeholder="Type your role" autocomplete="off">
+<p id="err"></p><button id="go" class="primary">Set Sail</button>
+<p class="sm">Roles (tap to fill):</p><div id="roles" class="chips"></div><h3>Leaderboard</h3><ol id="lb"></ol></section>
+<section id="game" hidden><div class="bar"><b id="who"></b><span id="sc">Score 0</span><button id="ex">Exit</button></div>
+<div id="stage"></div><div id="ctl"></div><div id="pop" hidden></div><button id="ab" hidden></button></section>
+</main><script>
+const $=s=>document.querySelector(s),R=['Captain','Combatant','Cook','Navigator','Musician','Shipwright','Archaeologist','Doctor','Sniper','Helmsman'],G={},K={};
+let T=[],sc=0,role,user,AB=null,alive=false,tt,raf,mem=[];
+const tm=(f,ms)=>{const i=setTimeout(f,ms);T.push(i);return i},iv=(f,ms)=>{const i=setInterval(f,ms);T.push(i);return i};
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,''),rnd=a=>a[Math.random()*a.length|0],shuf=a=>[...a].sort(()=>Math.random()-.5);
+const esc=s=>s.replace(/[&<>"]/g,c=>'&#'+c.charCodeAt(0)+';'),stage=$('#stage'),ctl=$('#ctl'),html=h=>stage.innerHTML=h;
+const mk=(l,f,c)=>{const b=document.createElement('button');b.textContent=l;b.onclick=()=>f(b);if(c)b.className=c;ctl.appendChild(b);return b},btn=(l,f,c)=>mk(l,b=>alive&&f(b),c);
+const add=(n=1)=>{sc+=n;$('#sc').textContent='Score '+sc},pop=h=>{const p=$('#pop');if(!p.hidden){p.hidden=true;return}p.innerHTML=h;p.hidden=false};
+const inp=f=>{const i=$('#ti');if(i){i.onkeydown=e=>e.key==='Enter'&&f();i.focus()}};
+function tbar(ms,end){const e=$('#tb i');if(!e)return;e.style.transition='none';e.style.width='100%';e.offsetWidth;e.style.transition=`width ${ms}ms linear`;e.style.width='0';clearTimeout(tt);tt=tm(end,ms)}
+function ab(need,fn,cd=15000,txt){AB={need,fn,cd,txt,t:0}}
+function abr(){const b=$('#ab');if(!AB){b.hidden=true;return}b.hidden=false;const n=Date.now(),w=n<AB.t+AB.cd;b.textContent=sc<AB.need?`🔒 Ability (unlocks at ${AB.need})`:w?`Ability ${Math.ceil((AB.t+AB.cd-n)/1000)}s`:AB.txt?AB.txt():'⚡ Ability';b.disabled=sc<AB.need||w}
+$('#ab').onclick=()=>{if(!alive||!AB||sc<AB.need||Date.now()<AB.t+AB.cd)return;if(AB.fn()!==false)AB.t=Date.now();abr()};
+const lbGet=()=>{try{return JSON.parse(localStorage.getItem('sof2')||'[]')}catch(e){return mem}};
+const lbHtml=()=>lbGet().map(x=>`<li>${esc(x.u)} · ${x.r} · <b>${x.s}</b></li>`).join('')||'<li>No scores yet</li>';
+function lbSave(){if(!sc)return;let l=lbGet();l.push({u:user,r:role,s:sc});l=l.sort((a,b)=>b.s-a.s).slice(0,8);mem=l;try{localStorage.setItem('sof2',JSON.stringify(l))}catch(e){}}
+function stop(){alive=false;T.forEach(i=>{clearTimeout(i);clearInterval(i)});T=[];AB=null;cancelAnimationFrame(raf);$('#ab').hidden=true}
+function begin(){stop();alive=true;sc=0;add(0);ctl.innerHTML='';html('');$('#pop').hidden=true;iv(abr,200);G[role]()}
+function over(m){if(!alive)return;stop();lbSave();html(`<div class="ov"><h2>${m}</h2><p>Score: ${sc}</p><h3>Leaderboard</h3><ol>${lbHtml()}</ol></div>`);ctl.innerHTML='';mk('Play again',begin,'primary');mk('Change role',home)}
+function home(){stop();$('#game').hidden=true;$('#home').hidden=false;$('#lb').innerHTML=lbHtml()}
+$('#ex').onclick=()=>alive?over('Run ended'):home();
+R.forEach(r=>{const b=document.createElement('button');b.textContent=r=='Navigator'?'Navigator + Thief':r;b.onclick=()=>$('#rl').value=r;$('#roles').appendChild(b)});
+$('#go').onclick=()=>{const u=$('#un').value.trim(),v=$('#rl').value,r=R.find(n=>norm(n)===norm(v))||(/navigator|thief/i.test(v)?'Navigator':null);
+if(!u)return $('#err').textContent='Enter a username';if(!r)return $('#err').textContent='Type one of the roles listed below';
+$('#err').textContent='';user=u;role=r;$('#home').hidden=true;$('#game').hidden=false;$('#who').textContent=u+' · '+(r=='Navigator'?'Navigator + Thief':r);begin()};
+onkeydown=e=>K[e.key]=1;onkeyup=e=>K[e.key]=0;$('#lb').innerHTML=lbHtml();
+
+G.Captain=()=>{
+const P=[['Wave','Anchor Line'],['Pincer','Center Block'],['Arrow','Shield Wall'],['Circle','Split Flank'],['Zigzag','Straight Line'],['Scatter','Net Ring'],['Fortress','Siege Line'],['Spiral','Wedge']];
+let c,t=5000;
+function round(){ctl.innerHTML='';c=rnd(P);const o=shuf([c[1],...shuf(P.filter(p=>p!==c)).slice(0,3).map(p=>p[1])]);
+html(`<div class="tb" id="tb"><i></i></div><p class="sm">Enemy bots attack in a</p><h2>${c[0]} pattern</h2><p class="sm">Pick the counter!</p>`);
+o.forEach(x=>btn(x,()=>{if(x===c[1]){add();t=Math.max(2500,t-250);round()}else over('Wrong counter!')},'o'));
+btn('📖 Book',()=>pop(P.map(p=>`${p[0]} → ${p[1]}`).join('<br>')));tbar(t,()=>over('Time’s up!'))}
+ab(3,()=>{[...ctl.querySelectorAll('.o')].find(x=>x.textContent===c[1]).classList.add('hi')},15000);round()};
+
+G.Combatant=()=>{
+let z=24,x=0,d=1,sp=.7,pos=0,strike=0,auto=0,n=1,s1,s2;
+html('<h2 id="en">👹 Enemy 1</h2><div class="bar2"><div id="zn"></div><div id="mk"></div></div><p id="msg" class="sm"></p>');
+const msg=t=>$('#msg').textContent=t,zone=()=>{pos=8+Math.random()*(84-z);$('#zn').style.cssText=`left:${pos}%;width:${z}%`},inz=()=>auto||(x>=pos&&x<=pos+z);
+const sched=()=>{s1=tm(()=>{strike=1;msg('⚠ Enemy strike! PARRY!');s2=tm(()=>over('You were struck!'),1500)},1500+Math.random()*2000)};
+zone();sched();msg('Hit Attack when the marker is in the green zone');
+iv(()=>{x+=d*sp;if(x>=98||x<=0)d*=-1;$('#mk').style.left=x+'%'},16);
+btn('⚔ Attack',()=>{const ok=inz();auto=0;if(ok){clearTimeout(s1);clearTimeout(s2);strike=0;add();n++;z=Math.max(6,z*.85);sp+=.08;$('#en').textContent='👹 Enemy '+n;zone();msg('Enemy defeated!');sched()}else msg('Missed!')});
+btn('🛡 Parry',()=>{if(!strike)return msg('Nothing to parry yet');const ok=inz();auto=0;if(ok){clearTimeout(s2);strike=0;msg('Parried!');sched()}else over('Parry failed!')});
+ab(3,()=>{auto=1;msg('⚡ Your next tap succeeds!')},20000)};
+
+G.Cook=()=>{
+const I=[['🍅','Tomato',12,22],['🥕','Carrot',68,14],['🐟','Fish',32,62],['🧅','Onion',82,52],['🥔','Potato',52,34],['🌶️','Pepper',14,80]];
+let need,got,sel,fast=0,taps=0,cook=0,want=6,cur;const F=()=>Date.now()<fast;
+function newDish(){need=shuf(I).slice(0,3);got=[];sel=null;cook=0;draw()}
+function draw(){html(`<p class="sm">Recipe: ${need.map(i=>(got.includes(i[1])?'✅':'')+i[0]+' '+i[1]).join(' · ')}</p><div class="map">${I.map(i=>`<b class="ing${sel===i[1]?' sel':''}" data-n="${i[1]}" style="left:${i[2]}%;top:${i[3]}%">${i[0]}</b>`).join('')}<span class="kit">🍳 Kitchen</span></div><p class="sm" id="cm">${F()?'⚡ Fast: tap to collect, cooking needs 3 taps':'Tap an ingredient, then Collect'}</p>`);
+stage.querySelectorAll('.ing').forEach(e=>e.onclick=()=>{if(cook)return;sel=e.dataset.n;F()?collect():draw()})}
+function collect(){if(cook||!sel)return;if(need.some(i=>i[1]===sel)&&!got.includes(sel))got.push(sel);sel=null;draw()}
+function num(){cur=1+Math.random()*3|0;html(`<h1 style="font-size:72px">${cur}</h1><p class="sm">Tap this number (${taps}/${want})</p>`)}
+[1,2,3].forEach(k=>btn(k,()=>{if(!cook)return;if(k===cur){taps++;if(taps>=want){add();newDish()}else num()}else{cook=0;got=[];html('<h2>💥 Dish spoiled!</h2><p class="sm">Collect everything again</p>');tm(draw,1300)}}));
+btn('Collect',collect);btn('Cook',()=>{if(cook)return;if(got.length<3){const m=$('#cm');if(m)m.textContent='Collect all 3 ingredients first';return}cook=1;taps=0;want=F()?3:6;num()});
+ab(3,()=>{fast=Date.now()+12000;if(!cook)draw()},25000);newDish()};
+
+G.Navigator=()=>{
+const L=[['🦀','Reef Isle',15,25],['💀','Skull Cove',72,16],['⚡','Storm Bay',44,48],['💰','Gold Port',80,62],['👻','Ghost Ridge',18,74],['🐚','Coral Gate',55,84]];
+let cur,free=0,hl=0,jail=0,x=0,pos=0,jt;
+function item(){cur=rnd(L);html(`<div class="tb" id="tb"><i></i></div><div class="map">${L.map(l=>`<span class="loc${hl&&l===cur?' sel':''}" data-n="${l[1]}" style="left:${l[2]}%;top:${l[3]}%">${l[1]}</span>`).join('')}</div><h1>${cur[0]}</h1><p class="sm" id="nm">Where is this found?</p><input id="ti" autocomplete="off" placeholder="Location name">`);inp(type);tbar(9000,late)}
+function type(){if(jail)return;if(norm($('#ti').value)===norm(cur[1])){add();if(hl)hl--;item()}else $('#nm').textContent='Wrong place, try again'}
+function late(){if(free>0){free--;return item()}jail=1;pos=30+Math.random()*40;x=0;html(`<h2>⛓ Imprisoned!</h2><p class="sm">Tap Jailbreak in the green zone. You have 1 second!</p><div class="bar2"><div id="zn" style="left:${pos}%;width:26%"></div><div id="mk"></div></div>`);jt=iv(()=>{x+=1.6;$('#mk').style.left=x+'%';if(x>=100)over('Stuck in jail!')},16)}
+btn('Type',type);btn('🔓 Jailbreak',()=>{if(!jail)return;clearInterval(jt);if(x>=pos&&x<=pos+26){jail=0;item()}else over('Jailbreak failed!')});
+btn('📖 Book',()=>pop(L.map(l=>`${l[0]} → ${l[1]}`).join('<br>')));
+ab(5,()=>{free=3;hl=3;if(jail){clearInterval(jt);jail=0;item()}else stage.querySelectorAll('.loc').forEach(e=>e.classList.toggle('sel',e.dataset.n===cur[1]))},30000);item()};
+
+G.Musician=()=>{
+const N=['C','D','E','F','G','A','B'],C=['#e5484d','#f5a524','#f7e03c','#30a46c','#0091ff','#a48bff','#ff7eb6'];
+let t=5000,free=0,cur;
+function round(){ctl.innerHTML='';cur=rnd(N);const o=shuf([cur,...shuf(N.filter(n=>n!==cur)).slice(0,3)]);
+html(`<div class="tb" id="tb"><i></i></div><p class="sm">Tap this note</p><h1>🎵 ${cur}</h1>${free?`<p class="sm">Free turns left: ${free}</p>`:''}`);
+o.forEach(n=>{const b=btn(n,()=>{const ok=n===cur||free>0;if(free>0)free--;if(ok){add();t=Math.max(1500,t-150);round()}else over('Wrong note!')},'o');b.style.background=C[N.indexOf(n)];b.style.color='#111'});
+tbar(t,()=>over('Time’s up!'))}
+ab(5,()=>{free=3;const m=stage.querySelector('p.sm');if(m)m.textContent='⚡ Any tap is correct for 3 turns'},30000);round()};
+
+G.Shipwright=()=>{
+const E=[['🔨','Hammer'],['🪵','Plank'],['⚓','Anchor'],['🪢','Rope'],['⛵','Sail'],['🔩','Nails']];
+let rep=0,need=rnd(E),hand=null,sel=null,pts=0,bots=0,busy=0,ships=0;const cost=()=>20*(bots+1);
+function draw(){html(`<p class="sm">Ship ${ships+1}: repair ${rep}/4</p><div class="prog"><i style="width:${rep*25}%"></i></div><h2>Needs: ${need[0]} ${need[1]}</h2><p class="sm">Holding: ${hand?hand[0]+' '+hand[1]:'nothing'} · Points: ${pts} · Bots: ${bots}/3</p><div class="chips">${E.map(e=>`<b class="ing${sel===e?' sel':''}" data-n="${e[1]}">${e[0]}<br><small>${e[1]}</small></b>`).join('')}</div><div class="prog"><i class="${busy?'run':''}"></i></div>`);
+stage.querySelectorAll('.ing').forEach(e=>e.onclick=()=>{sel=E.find(x=>x[1]===e.dataset.n);draw()})}
+function step(){rep++;pts+=5;add(5);if(rep>=4){ships++;rep=0;pts+=10;add(10)}need=rnd(E);draw()}
+function bot(){let n=0;const loop=()=>tm(()=>{step();n++;if(n>=2){n=0;tm(loop,8000)}else loop()},3500);loop()}
+btn('Pick',()=>{if(hand||!sel)return;hand=sel;sel=null;draw()});
+btn('Repair',()=>{if(busy||!hand)return;if(hand!==need){hand=null;return draw()}busy=1;draw();tm(()=>{busy=0;hand=null;step()},1200)});
+ab(0,()=>{if(bots>=3||pts<cost())return false;pts-=cost();bots++;bot();draw()},0,()=>bots>=3?'Bots maxed':`🤖 Buy Bot (${cost()} pts)`);draw()};
+
+G.Archaeologist=()=>{
+const S=[['Good morning',{French:'bonjour',Spanish:'buenos días',German:'guten morgen',Japanese:'ohayou gozaimasu|ohayo gozaimasu',Korean:'joeun achim|joheun achim'}],
+['Thank you',{French:'merci',Spanish:'gracias',German:'danke',Japanese:'arigatou|arigato',Korean:'gamsahamnida|kamsahamnida'}],
+['I love the sea',{French:'j’aime la mer',Spanish:'amo el mar|me encanta el mar',German:'ich liebe das meer',Japanese:'umi ga suki desu',Korean:'badareul joahaeyo|badaleul joahaeyo'}],
+['Where is the treasure',{French:'où est le trésor',Spanish:'dónde está el tesoro',German:'wo ist der schatz',Japanese:'takara wa doko desu ka',Korean:'bomuri eodi isseoyo|bomuli eodi isseoyo'}]];
+const LG=['German','Spanish','Japanese','Korean','French','English'];let lang,ans;
+function pick(){ctl.innerHTML='';html('<h2>Choose a language</h2>');LG.forEach(l=>btn(l,()=>l=='English'?warn():go(l)))}
+function warn(){ctl.innerHTML='';html('<h2>⚠ English is the hardest difficulty</h2><p class="sm">You will get sentences in other languages and must translate them into English.</p>');btn('Still English',()=>go('English'));btn('Back',pick)}
+function go(l){lang=l;next()}
+function next(){const q=rnd(S),from=lang=='English'?rnd(LG.slice(0,5)):lang,en=lang=='English';ans=en?q[0]:q[1][lang];
+html(`<p class="sm">${en?`Translate this ${from} sentence into English`:`Translate into ${lang}`}</p><h2>${esc(en?q[1][from].split('|')[0]:q[0])}</h2>${/Japanese|Korean/.test(lang+from)?'<p class="sm">Japanese and Korean: romanized letters only, no original script.</p>':''}<input id="ti" autocomplete="off">`);
+ctl.innerHTML='';btn('Submit',sub);inp(sub)}
+function sub(){if(ans.split('|').some(a=>norm(a)===norm($('#ti').value))){add();next()}else over('Wrong! Answer: '+esc(ans.split('|')[0]))}
+ab(3,()=>{const i=$('#ti');if(!i)return false;i.value=ans.split('|')[0]},20000);pick()};
+
+G.Doctor=()=>{
+const D=[['Scurvy','Lime'],['Fever','Willow Bark'],['Infection','Honey'],['Seasickness','Ginger'],['Toothache','Clove'],['Burns','Aloe'],['Snakebite','Antivenom'],['Cough','Mint']];
+let c,t=15000;const lost=()=>over('Patient lost: time’s up!');
+function round(){c=rnd(D);html(`<div class="tb" id="tb"><i></i></div><p class="sm">Patient has</p><h1>${c[0]}</h1><input id="ti" placeholder="Type the cure" autocomplete="off">`);inp(sub);tbar(t,lost)}
+function sub(){if(norm($('#ti').value)===norm(c[1])){add();t=Math.max(6000,t-500);round()}else over('Patient lost! Cure: '+c[1])}
+btn('Submit',sub);btn('📖 Book',()=>pop(D.map(d=>`${d[0]} → ${d[1]}`).join('<br>')));
+ab(3,()=>tbar(t+8000,lost),20000);round()};
+
+G.Sniper=()=>{
+html('<canvas id="cv" width="320" height="300"></canvas>');
+const cv=$('#cv'),g=cv.getContext('2d'),cs=getComputedStyle(document.body),fg=cs.color,bg=cs.getPropertyValue('--bd'),W=[[100,70,10,90],[200,150,90,10],[60,200,80,10]];
+let p={x:160,y:260},hp=5,B=[],tg=0,last=-9e3,dbl=0,inv=0,jx=0,jy=0,fx=null;
+const spawn=()=>{const s=rnd([[0,0],[320,0],[0,300],[320,300],[160,0],[0,150],[320,150]]);B.push({x:s[0],y:s[1]})};for(let i=0;i<7;i++)spawn();
+const inW=(x,y)=>W.some(w=>x>w[0]-6&&x<w[0]+w[2]+6&&y>w[1]-6&&y<w[1]+w[3]+6),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const sh=btn('🎯 Shoot',()=>{const n=Date.now();if(n-last<2000||!B.length)return;last=n;let k=dbl>0?2:1;if(dbl>0)dbl--;
+const ts=[B[tg%B.length],...B.filter(b=>b!==B[tg%B.length]).sort((a,b)=>dist(a,p)-dist(b,p))].slice(0,k);
+if(ts.some(b=>dist(b,p)<90)){hp--;if(hp<=0)return over('Recoil took you down!')}
+fx={t:n+250,l:ts.map(b=>{let m=null;for(let i=1;i<20;i++){const x=p.x+(b.x-p.x)*i/20,y=p.y+(b.y-p.y)*i/20;if(inW(x,y)){m={x:x+(Math.random()-.5)*50,y:y-25};break}}return[m,b.x,b.y]})};
+ts.forEach(b=>{B.splice(B.indexOf(b),1);add();spawn()});tg=0});
+btn('🔁 Change',()=>{tg=(tg+1)%B.length});
+ctl.insertAdjacentHTML('beforeend','<div id="js"><i></i></div>');const js=$('#js'),kn=js.firstChild;
+const mv=e=>{const r=js.getBoundingClientRect();let dx=e.clientX-r.left-50,dy=e.clientY-r.top-50;const l=Math.hypot(dx,dy)||1;if(l>40){dx=dx/l*40;dy=dy/l*40}jx=dx/40;jy=dy/40;kn.style.transform=`translate(${dx}px,${dy}px)`};
+js.onpointerdown=e=>{js.setPointerCapture(e.pointerId);mv(e)};js.onpointermove=e=>{if(e.buttons)mv(e)};js.onpointerup=()=>{jx=jy=0;kn.style.transform=''};
+ab(5,()=>{dbl=2},20000);
+(function loop(){if(!alive)return;const n=Date.now(),vx=jx+(K.ArrowRight||K.d?1:0)-(K.ArrowLeft||K.a?1:0),vy=jy+(K.ArrowDown||K.s?1:0)-(K.ArrowUp||K.w?1:0),nx=Math.max(8,Math.min(312,p.x+vx*2.4)),ny=Math.max(8,Math.min(292,p.y+vy*2.4));
+if(!inW(nx,p.y))p.x=nx;if(!inW(p.x,ny))p.y=ny;
+B.forEach(b=>{const d=dist(b,p)||1,s=Math.min(1.3,.5+sc*.02);b.x+=(p.x-b.x)/d*s;b.y+=(p.y-b.y)/d*s;if(d<14&&n>inv){hp--;inv=n+1000}});
+if(hp<=0)return over('Overrun by bots!');
+g.clearRect(0,0,320,300);g.fillStyle=bg;W.forEach(w=>g.fillRect(...w));
+B.forEach((b,i)=>{g.fillStyle='#e5484d';g.beginPath();g.arc(b.x,b.y,8,0,7);g.fill()});
+const t=B[tg%B.length];if(t){g.strokeStyle='#f5a524';g.lineWidth=2;g.setLineDash([5,4]);g.beginPath();g.moveTo(p.x,p.y);g.lineTo(t.x,t.y);g.stroke();g.setLineDash([])}
+if(fx&&n<fx.t){g.strokeStyle='#fff';g.lineWidth=3;fx.l.forEach(l=>{g.beginPath();g.moveTo(p.x,p.y);if(l[0])g.lineTo(l[0].x,l[0].y);g.lineTo(l[1],l[2]);g.stroke()})}
+g.fillStyle='#0091ff';g.beginPath();g.arc(p.x,p.y,9,0,7);g.fill();g.fillStyle=fg;g.font='14px system-ui';g.fillText('❤'.repeat(hp)+(dbl?'  ×2 shots':''),8,18);
+sh.textContent=n-last<2000?`Shoot (${((2000-(n-last))/1000).toFixed(1)}s)`:'🎯 Shoot';
+raf=requestAnimationFrame(loop)})()};
+
+G.Helmsman=()=>{
+let x=50,v=0,calm=0,sec=0;
+html('<h2>Keep the ship in the middle</h2><div class="bar2"><div id="ze" style="left:40%;width:20%"></div><div id="sp">⛵</div></div><p class="sm">Tap Left and Right to steady her</p>');
+btn('◀ Left',()=>v-=.5);btn('Right ▶',()=>v+=.5);ab(10,()=>{calm=Date.now()+2000},15000);
+iv(()=>{if(Date.now()<calm){v*=.7;x+=(50-x)*.12}else{v+=(Math.random()-.5)*.14*(1+sec/40);v*=.98}x+=v;$('#sp').style.left=x+'%';if(x<2||x>98)over('The ship capsized!')},30);
+iv(()=>{sec++;add()},1000)};
+</script></body></html>
